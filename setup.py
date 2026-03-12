@@ -1,11 +1,13 @@
 import os
 import subprocess
 import sys
+import sysconfig
 from pathlib import Path
 from setuptools import setup, find_packages
 
 
 STATIC_DIR = Path(__file__).parent / "static"
+PYTHON = sys.executable
 
 
 def build_bindings():
@@ -21,26 +23,20 @@ def build_bindings():
             check=True,
         )
 
-    python_inc = (
-        subprocess.check_output("python3-config --includes | cut -d' ' -f1", shell=True)
-        .decode()
-        .strip()
-    )
+    python_inc = sysconfig.get_path("include")
+    ext_suffix = sysconfig.get_config_var("EXT_SUFFIX")
+    python_ldflags = sysconfig.get_config_var("LDFLAGS")
+
     pybind11_inc = (
         subprocess.check_output(
-            'python3 -c "import pybind11; print(pybind11.get_include())"', shell=True
+            f'{PYTHON} -c "import pybind11; print(pybind11.get_include())"', shell=True
         )
         .decode()
         .strip()
     )
-    python_ldflags = (
-        subprocess.check_output("python3-config --ldflags", shell=True).decode().strip()
-    )
-    ext_suffix = (
-        subprocess.check_output("python3-config --extension-suffix", shell=True)
-        .decode()
-        .strip()
-    )
+
+    print(f"Building for Python {sys.version_info.major}.{sys.version_info.minor}")
+    print(f"Extension suffix: {ext_suffix}")
 
     build_dir = STATIC_DIR / "build"
     os.makedirs(build_dir, exist_ok=True)
@@ -75,7 +71,7 @@ def build_bindings():
     output = f"static/_static{ext_suffix}"
     cmd = (
         f"g++ -std=c++17 -O3 -march=native -ffast-math -Wall -fPIC "
-        f"-I{STATIC_DIR} -I{STATIC_DIR}/src -I{STATIC_DIR}/tiktoken-c -I{pybind11_inc} {python_inc} "
+        f"-I{STATIC_DIR} -I{STATIC_DIR}/src -I{STATIC_DIR}/tiktoken-c -I{pybind11_inc} -I{python_inc} "
         f"-shared -fPIC -o {output} "
         f"{' '.join(str(o) for o in objs)} {build_dir / 'libtiktoken_c.a'} "
         f"pybind.cpp {python_ldflags} -lpthread -ldl"
@@ -84,12 +80,19 @@ def build_bindings():
     print(f"Built: {output}")
 
 
+def get_static_package_data():
+    so_files = list(STATIC_DIR.glob("_static*.so"))
+    py_files = list(STATIC_DIR.glob("*.py"))
+    return [f.name for f in so_files + py_files]
+
+
 def main():
     build_bindings()
     setup(
         name="static-python",
         version="0.1.0",
-        packages=find_packages(),
+        packages=["static"],
+        package_data={"static": get_static_package_data()},
         install_requires=["numpy>=1.20"],
         python_requires=">=3.9",
     )

@@ -7,6 +7,7 @@ from pathlib import Path
 
 STATIC_DIR = Path(__file__).parent / "static"
 BUILD_DIR = STATIC_DIR / "build"
+PYTHON = sys.executable
 
 
 def run(cmd, cwd=None):
@@ -14,6 +15,15 @@ def run(cmd, cwd=None):
     result = subprocess.run(cmd, shell=True, cwd=cwd)
     if result.returncode != 0:
         sys.exit(result.returncode)
+
+
+def get_python_vars():
+    import sysconfig
+
+    ext_suffix = sysconfig.get_config_var("EXT_SUFFIX")
+    inc = sysconfig.get_path("include")
+    ldflags = sysconfig.get_config_var("LDFLAGS")
+    return inc, ext_suffix, ldflags
 
 
 def build_bindings():
@@ -25,26 +35,18 @@ def build_bindings():
         print("Initializing submodules...")
         run("git submodule update --init --recursive", cwd=STATIC_DIR)
 
-    python_inc = (
-        subprocess.check_output("python3-config --includes | cut -d' ' -f1", shell=True)
-        .decode()
-        .strip()
-    )
+    python_inc, ext_suffix, python_ldflags = get_python_vars()
+
     pybind11_inc = (
         subprocess.check_output(
-            'python3 -c "import pybind11; print(pybind11.get_include())"', shell=True
+            f'{PYTHON} -c "import pybind11; print(pybind11.get_include())"', shell=True
         )
         .decode()
         .strip()
     )
-    python_ldflags = (
-        subprocess.check_output("python3-config --ldflags", shell=True).decode().strip()
-    )
-    ext_suffix = (
-        subprocess.check_output("python3-config --extension-suffix", shell=True)
-        .decode()
-        .strip()
-    )
+
+    print(f"Building for Python {sys.version_info.major}.{sys.version_info.minor}")
+    print(f"Extension suffix: {ext_suffix}")
 
     os.makedirs(BUILD_DIR, exist_ok=True)
     os.makedirs(Path(__file__).parent / "static", exist_ok=True)
@@ -72,7 +74,7 @@ def build_bindings():
     output = f"static/_static{ext_suffix}"
     cmd = (
         f"g++ -std=c++17 -O3 -march=native -ffast-math -Wall -fPIC "
-        f"-I{STATIC_DIR} -I{STATIC_DIR}/src -I{STATIC_DIR}/tiktoken-c -I{pybind11_inc} {python_inc} "
+        f"-I{STATIC_DIR} -I{STATIC_DIR}/src -I{STATIC_DIR}/tiktoken-c -I{pybind11_inc} -I{python_inc} "
         f"-shared -fPIC -o {output} "
         f"{' '.join(str(o) for o in objs)} {STATIC_DIR / 'build' / 'libtiktoken_c.a'} "
         f"pybind.cpp {python_ldflags} -lpthread -ldl"
