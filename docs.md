@@ -16,7 +16,7 @@ uv add git+https://github.com/prisma-ml-labs/static-python.git
 ## Quick Start
 
 ```python
-from _pipeline import EmbeddingPipeline
+from static import EmbeddingPipeline
 import numpy as np
 
 p = EmbeddingPipeline(

@@ -23,4 +23,4 @@ dev = ["pytest", "ruff"]
 static-build = "build_bindings:main"
 
 [tool.setuptools]
-packages = ["_pipeline"]
+packages = ["static"]

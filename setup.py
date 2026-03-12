@@ -44,6 +44,7 @@ def build_bindings():
 
     build_dir = STATIC_DIR / "build"
     os.makedirs(build_dir, exist_ok=True)
+    os.makedirs(Path(__file__).parent / "static", exist_ok=True)
 
     objs = []
     for src in ["embedder.cpp", "tokenizer_wrapper.cpp", "binary.cpp"]:
@@ -71,7 +72,7 @@ def build_bindings():
 
         objs.append(obj)
 
-    output = f"_static{ext_suffix}"
+    output = f"static/_static{ext_suffix}"
     cmd = (
         f"g++ -std=c++17 -O3 -march=native -ffast-math -Wall -fPIC "
         f"-I{STATIC_DIR} -I{STATIC_DIR}/src -I{STATIC_DIR}/tiktoken-c -I{pybind11_inc} {python_inc} "
