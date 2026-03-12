@@ -1,6 +1,5 @@
+include pybind.cpp
 include static/__init__.py
 include static/bench.py
-include static/_static*.so
-include pybind.cpp
 recursive-include static/src *.cpp *.h
-recursive-include static/tiktoken-c *.h
+recursive-include static/tiktoken-c *.h *.rs *.toml *.lock

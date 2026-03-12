@@ -1,0 +1,14 @@
+.ruff_cache/
+__pycache__/
+.venv/
+
+*.emb
+*.bin
+*.vocab.json
+
+*.o
+*.a
+
+build/
+
+mteb_results/

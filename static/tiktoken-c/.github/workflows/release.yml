@@ -1,0 +1,72 @@
+name: release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build_release:
+    name: Build Release
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            archive_name: tiktoken-c-linux-x64
+            archive_ext: tar.gz
+          - os: macos-latest
+            archive_name: tiktoken-c-macos-x64
+            archive_ext: tar.gz
+          - os: windows-latest
+            archive_name: tiktoken-c-windows-x64
+            archive_ext: zip
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+
+      - name: Build default version
+        run: cargo build --release --verbose
+
+      - name: Build logging version
+        run: cargo build --release --features logging --verbose
+
+      - name: Create release package
+        shell: bash
+        run: |
+          mkdir -p release_package
+          cp tiktoken.h release_package/
+          cp README.md release_package/
+          cp LICENSE.txt release_package/
+
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
+            # Default version
+            cp target/release/tiktoken_c.dll release_package/
+            cp target/release/tiktoken_c.dll.lib release_package/
+            # Logging version
+            cp target/release/tiktoken_c.dll release_package/tiktoken_c_debug.dll
+            cp target/release/tiktoken_c.dll.lib release_package/tiktoken_c_debug.dll.lib
+          else
+            # Default version
+            cp target/release/libtiktoken_c.* release_package/
+            # Logging version (rename to avoid overwrite)
+            for file in target/release/libtiktoken_c.*; do
+              ext="${file##*.}"
+              cp "$file" "release_package/libtiktoken_c_debug.$ext"
+            done
+          fi
+
+      - name: Create archive (Unix)
+        if: runner.os != 'Windows'
+        run: tar -czf ${{ matrix.archive_name }}.${{ matrix.archive_ext }} -C release_package .
+
+      - name: Create archive (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          cd release_package
+          7z a ../${{ matrix.archive_name }}.${{ matrix.archive_ext }} *
+
+      - name: Upload Release Assets
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ matrix.archive_name }}.${{ matrix.archive_ext }}

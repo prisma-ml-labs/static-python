@@ -28,12 +28,12 @@ def get_python_vars():
 
 def build_bindings():
     if not STATIC_DIR.exists():
-        print("Error: static/ submodule not found")
+        print("Error: static/ directory not found")
         sys.exit(1)
 
     if not (STATIC_DIR / "tiktoken-c").exists():
-        print("Initializing submodules...")
-        run("git submodule update --init --recursive", cwd=STATIC_DIR)
+        print("Error: static/tiktoken-c/ directory not found")
+        sys.exit(1)
 
     python_inc, ext_suffix, python_ldflags = get_python_vars()
 
