@@ -27,17 +27,17 @@ jobs:
       - name: Check for C++ binding updates
         id: check
         run: |
-          # Compare C++ source files (diff returns 1 when files differ, which is ok)
+          # Check if upstream has new/changed C++ source files we don't have
+          # Compare src/ directory - files only in upstream = new changes to sync
           diff -rq /tmp/upstream-static/src static/src > /tmp/diff.txt 2>&1 || true
           
-          # Also check tiktoken-c headers
-          diff -rq /tmp/upstream-static/tiktoken-c static/tiktoken-c >> /tmp/diff.txt 2>&1 || true
+          # Filter to only "Only in upstream" lines (new files we need)
+          grep "^Only in /tmp/upstream-static" /tmp/diff.txt > /tmp/changes.txt 2>&1 || true
           
-          if [ -s /tmp/diff.txt ]; then
+          if [ -s /tmp/changes.txt ]; then
             echo "has_changes=true" >> $GITHUB_OUTPUT
-            # Save diff to an env var for the PR body
             echo "DIFF_CONTENT<<EOF" >> $GITHUB_ENV
-            cat /tmp/diff.txt >> $GITHUB_ENV
+            cat /tmp/changes.txt >> $GITHUB_ENV
             echo "EOF" >> $GITHUB_ENV
           else
             echo "has_changes=false" >> $GITHUB_OUTPUT
