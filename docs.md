@@ -1,6 +1,13 @@
 # Static (python bindings)
+
 ## Installation
 
+### From PyPI (recommended)
+```bash
+pip install static-python
+```
+
+### From source (for development or custom builds)
 ```bash
 git clone --recurse-submodules https://github.com/prisma-ml-labs/static-python.git
 cd static-python
@@ -8,10 +15,12 @@ cd static-python
 pip install -e .
 ```
 
-Or install using uv
+Or install using uv:
 ```bash
 uv add git+https://github.com/prisma-ml-labs/static-python.git
 ```
+
+> **Note**: When installing from git, the package will be built from source. This requires C++ compiler, CMake, and pybind11. Pre-built wheels for multiple Python versions are available on PyPI.
 
 ## Quick Start
 

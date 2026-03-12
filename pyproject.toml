@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=61.0", "pybind11>=2.10", "numpy"]
+requires = ["setuptools>=61.0", "pybind11>=2.10", "numpy", "scikit-build", "cmake"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -24,3 +24,6 @@ static-build = "build_bindings:main"
 
 [tool.setuptools]
 packages = ["static"]
+
+[tool.setuptools.package-data]
+static = ["_static*.so", "*.so"]
