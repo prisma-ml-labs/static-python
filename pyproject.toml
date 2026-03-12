@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=61.0", "pybind11>=2.10", "numpy"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "static-python"
+version = "0.1.0"
+description = "Fast tokenization and embedding inference pipeline"
+readme = "docs.md"
+requires-python = ">=3.9"
+license = {text = "MIT"}
+authors = [
+    {name = "Author", email = "author@example.com"}
+]
+dependencies = [
+    "numpy>=1.20",
+]
+
+[project.optional-dependencies]
+dev = ["pytest", "ruff"]
+
+[project.scripts]
+static-build = "build_bindings:main"
+
+[tool.setuptools]
+packages = ["_pipeline"]
