@@ -35,8 +35,10 @@ jobs:
           
           if [ -s /tmp/diff.txt ]; then
             echo "has_changes=true" >> $GITHUB_OUTPUT
-            echo "Changes found:" >> $GITHUB_OUTPUT
-            cat /tmp/diff.txt >> $GITHUB_OUTPUT
+            # Save diff to an env var for the PR body
+            echo "DIFF_CONTENT<<EOF" >> $GITHUB_ENV
+            cat /tmp/diff.txt >> $GITHUB_ENV
+            echo "EOF" >> $GITHUB_ENV
           else
             echo "has_changes=false" >> $GITHUB_OUTPUT
           fi
@@ -51,9 +53,10 @@ jobs:
           body: |
             Sync C++ source files from https://github.com/prisma-ml-labs/static
             
-            Changes detected in:
-            - static/src/*.cpp / *.h
-            - static/tiktoken-c/
+            Changes detected:
+            ```
+            ${{ env.DIFF_CONTENT }}
+            ```
             
             Please review before merging.
           branch: sync-bindings-upstream
