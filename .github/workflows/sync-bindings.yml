@@ -1,0 +1,60 @@
+name: Sync bindings from upstream
+
+on:
+  schedule:
+    - cron: '0 0 * * 0'  # Weekly on Sundays
+  workflow_dispatch:  # Manual trigger
+
+jobs:
+  check-updates:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout static-python
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Fetch upstream static repo
+        run: |
+          git clone --depth 1 https://github.com/prisma-ml-labs/static /tmp/upstream-static
+
+      - name: Check for C++ binding updates
+        id: check
+        run: |
+          # Compare C++ source files
+          diff -rq /tmp/upstream-static/src static/src > /tmp/diff.txt 2>&1
+          
+          # Also check tiktoken-c headers
+          diff -rq /tmp/upstream-static/tiktoken-c static/tiktoken-c >> /tmp/diff.txt 2>&1
+          
+          if [ -s /tmp/diff.txt ]; then
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+            echo "Changes found:" >> $GITHUB_OUTPUT
+            cat /tmp/diff.txt >> $GITHUB_OUTPUT
+          else
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create PR with updates
+        if: steps.check.outputs.has_changes == 'true'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "Update C++ bindings from upstream"
+          title: "Update C++ bindings from upstream static"
+          body: |
+            Sync C++ source files from https://github.com/prisma-ml-labs/static
+            
+            Changes detected in:
+            - static/src/*.cpp / *.h
+            - static/tiktoken-c/
+            
+            Please review before merging.
+          branch: sync-bindings-upstream
+          delete-branch: true
